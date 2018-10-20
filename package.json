@@ -1,0 +1,16 @@
+{
+  "name": "biznesimport",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/isomorphic-fetch": "0.0.34",
+    "isomorphic-fetch": "^2.2.1",
+    "node-html-parser": "^1.1.10"
+  }
+}
