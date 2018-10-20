@@ -1,9 +1,9 @@
 import fetch from 'isomorphic-fetch';
 import {
     parse,
-    HTMLElement,
-    Node
+    HTMLElement
 } from 'node-html-parser';
+import { ExportToCsv } from 'export-to-csv';
 
 class Product {
     private _name: string;
@@ -28,27 +28,30 @@ class Product {
 }
 
 class Import {
-    private TreflProductListUrl: string = "https://sklep.trefl.com/pl/Filter/advanced/result/?price[from]=0&price[to]=9999&p={page}&limit=15&order=price&dir=asc"
+    private TreflProductListUrl: string = "https://sklep.trefl.com/pl/Filter/advanced/result/?price[from]=0&price[to]=9999&p={page}&limit=200&order=price&dir=asc"
 
     async import(): Promise < number > {
         let body = await this.fetchPage(1);
         const pageCount = this.getPagesCount(body);
-        var productList: Product[] = [];
-        console.log(`There is ${pageCount} product pages`)
-        for (let i = 1; i <= pageCount; i++) {
-            if (i != 1) {
-                body = await this.fetchPage(i);
-            }
-            let parsedProducts: Product[] = this.getProducts(body);
-            productList.push(...parsedProducts);
+        let productList: Product[] = [];
+        let fetchPromiseArray:Promise<HTMLElement>[] = [];
+
+        console.log(`There is ${pageCount} product pages...`)
+
+        for (let i = 2; i <= pageCount; i++) {
+            fetchPromiseArray.push(this.fetchPage(i));
         }
+        let parsedPages = [body, ...(await Promise.all(fetchPromiseArray))];
+        console.log("Parsing products...")
+        productList = productList.concat(...parsedPages.map(p => this.getProducts(p)));
+        console.log(`Parsed ${productList.length} products...`)
 
         return 0;
     }
 
     private async fetchPage(page: number): Promise < HTMLElement > {
         const url = this.TreflProductListUrl.replace("{page}", page.toString());
-        console.log("fetching: ", url);
+        console.log(`Fetching ${url}`);
         const request = await fetch(url);
         const body = await request.text();
         return parse(body);
@@ -74,10 +77,10 @@ class Import {
     private parseProductNode(productNode: HTMLElement): Product {
         let name = productNode.querySelector("a h4").text;
         let categories = productNode.querySelectorAll(".info dt").map(n => n.text);
-        let price:string = "";
-        let specialPrice:string = "";
+        let price: string = "";
+        let specialPrice: string = "";
         let searchPrice = productNode.querySelector("a .price .old-price");
-        if(searchPrice) {
+        if (searchPrice) {
             price = searchPrice.text.replace(/[^,0-9]+/gi, "");
             specialPrice = productNode.querySelector("a .price .big-price").text.replace(/[^,0-9]+/gi, "");
         } else {
@@ -85,11 +88,11 @@ class Import {
         }
         let description = productNode.querySelector("a p").text;
         let imagePath = "";
-        
-        let resultProduct = new Product(name, categories, price, specialPrice, description, imagePath);        
+
+        let resultProduct = new Product(name, categories, price, specialPrice, description, imagePath);
         return resultProduct;
     }
 }
 
-var a = new Import();
-a.import();
+var imp = new Import();
+imp.import();
