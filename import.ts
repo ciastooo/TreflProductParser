@@ -8,12 +8,12 @@ import {
 class Product {
     private _name: string;
     private _categories: string[];
-    private _price: number;
-    private _special_price: number;
+    private _price: string;
+    private _special_price: string;
     private _description: string;
     private _imagePath: string;
 
-    constructor(name: string, categories: string[], price: number, special_price: number, description: string, imagePath: string) {
+    constructor(name: string, categories: string[], price: string, special_price: string, description: string, imagePath: string) {
         this._name = name;
         this._categories = categories;
         this._price = price;
@@ -63,24 +63,31 @@ class Import {
     }
 
     private getProducts(body: HTMLElement): Product[] {
-        let result: Product[] = [];
+        let resultProducts: Product[] = [];
         let productListNodes = body.querySelectorAll("#list .list li");
         productListNodes.forEach(node => {
-            this.parseProductNode(node as HTMLElement);
+            resultProducts.push(this.parseProductNode(node as HTMLElement));
         });
-        return result;
+        return resultProducts;
     }
 
-    private parseProductNode(productNode: HTMLElement) {
+    private parseProductNode(productNode: HTMLElement): Product {
         let name = productNode.querySelector("a h4").text;
-        let categories = productNode.querySelectorAll(".info ").map(n => n.text);
-        let price = productNode.querySelector("a ").text;
-        let special_price = 1;
-        let description = "";
+        let categories = productNode.querySelectorAll(".info dt").map(n => n.text);
+        let price:string = "";
+        let specialPrice:string = "";
+        let searchPrice = productNode.querySelector("a .price .old-price");
+        if(searchPrice) {
+            price = searchPrice.text.replace(/[^,0-9]+/gi, "");
+            specialPrice = productNode.querySelector("a .price .big-price").text.replace(/[^,0-9]+/gi, "");
+        } else {
+            price = productNode.querySelector("a .price").text.replace(/[^,0-9]+/gi, "")
+        }
+        let description = productNode.querySelector("a p").text;
         let imagePath = "";
-        console.log(name, categories, price, special_price, description, imagePath);
         
-        return null;
+        let resultProduct = new Product(name, categories, price, specialPrice, description, imagePath);        
+        return resultProduct;
     }
 }
 
