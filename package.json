@@ -10,8 +10,10 @@
   "license": "ISC",
   "dependencies": {
     "@types/isomorphic-fetch": "0.0.34",
-    "export-to-csv": "^0.1.2",
     "isomorphic-fetch": "^2.2.1",
     "node-html-parser": "^1.1.10"
+  },
+  "devDependencies": {
+    "@types/node": "^10.12.0"
   }
 }
