@@ -3,7 +3,9 @@ import {
     parse,
     HTMLElement
 } from 'node-html-parser';
-import { ExportToCsv } from 'export-to-csv';
+import {
+    ExportToCsv
+} from 'export-to-csv';
 
 class Product {
     private _name: string;
@@ -21,20 +23,17 @@ class Product {
         this._description = description;
         this._imagePath = imagePath;
     }
-
-    public getCsvRow(): string {
-        return "";
-    }
 }
 
 class Import {
     private TreflProductListUrl: string = "https://sklep.trefl.com/pl/Filter/advanced/result/?price[from]=0&price[to]=9999&p={page}&limit=200&order=price&dir=asc"
 
     async import(): Promise < number > {
-        let body = await this.fetchPage(1);
+        const body = await this.fetchPage(1);
         const pageCount = this.getPagesCount(body);
-        let productList: Product[] = [];
-        let fetchPromiseArray:Promise<HTMLElement>[] = [];
+        let productListPromiseArray: Promise<Product[]>[] = [];
+        let fetchPromiseArray: Promise < HTMLElement > [] = [];
+        let parsedProductList: Product[] = [];
 
         console.log(`There is ${pageCount} product pages...`)
 
@@ -43,8 +42,12 @@ class Import {
         }
         let parsedPages = [body, ...(await Promise.all(fetchPromiseArray))];
         console.log("Parsing products...")
-        productList = productList.concat(...parsedPages.map(p => this.getProducts(p)));
-        console.log(`Parsed ${productList.length} products...`)
+        productListPromiseArray = productListPromiseArray.concat(parsedPages.map(p => this.getProducts(p)));
+
+        parsedProductList = parsedProductList.concat(...await Promise.all(productListPromiseArray));
+        console.log(`Parsed ${parsedProductList.length} products...`)
+
+        this.exportToCsv(parsedProductList);
 
         return 0;
     }
@@ -58,39 +61,57 @@ class Import {
     }
 
     private getPagesCount(body: HTMLElement): number {
-        let lastPaginationNode = body.querySelector("#list .toolbar .pagination ol .last");
+        const lastPaginationNode = body.querySelector("#list .toolbar .pagination ol .last");
         if (!lastPaginationNode) {
             return 1;
         }
         return parseInt(lastPaginationNode.text);
     }
 
-    private getProducts(body: HTMLElement): Product[] {
-        let resultProducts: Product[] = [];
-        let productListNodes = body.querySelectorAll("#list .list li");
+    private async getProducts(body: HTMLElement): Promise<Product[]> {
+        const resultProductsPromiseArray: Promise<Product>[] = [];
+        const productListNodes = body.querySelectorAll("#list .list li");
         productListNodes.forEach(node => {
-            resultProducts.push(this.parseProductNode(node as HTMLElement));
+            resultProductsPromiseArray.push(this.parseProductNode(node as HTMLElement));
         });
-        return resultProducts;
+        return await Promise.all(resultProductsPromiseArray);
     }
 
-    private parseProductNode(productNode: HTMLElement): Product {
-        let name = productNode.querySelector("a h4").text;
-        let categories = productNode.querySelectorAll(".info dt").map(n => n.text);
+    private async parseProductNode(productNode: HTMLElement): Promise<Product> {
+        const name = productNode.querySelector("a .main h4").text;
+        const categories = productNode.querySelectorAll(".info dt").map(n => n.text);
         let price: string = "";
         let specialPrice: string = "";
-        let searchPrice = productNode.querySelector("a .price .old-price");
+        let searchPrice = productNode.querySelector("a .main .price .old-price");
         if (searchPrice) {
             price = searchPrice.text.replace(/[^,0-9]+/gi, "");
-            specialPrice = productNode.querySelector("a .price .big-price").text.replace(/[^,0-9]+/gi, "");
+            specialPrice = productNode.querySelector("a .main .price .big-price").text.replace(/[^,0-9]+/gi, "");
         } else {
-            price = productNode.querySelector("a .price").text.replace(/[^,0-9]+/gi, "")
+            price = productNode.querySelector("a .main .price").text.replace(/[^,0-9]+/gi, "")
         }
-        let description = productNode.querySelector("a p").text;
-        let imagePath = "";
+        const description = productNode.querySelector("a .main p").text;
+        const imagePath = await this.downloadPhoto(productNode.querySelector("a .main img") as HTMLElement);
 
-        let resultProduct = new Product(name, categories, price, specialPrice, description, imagePath);
+        const resultProduct = new Product(name, categories, price, specialPrice, description, imagePath);
         return resultProduct;
+    }
+
+    private async downloadPhoto(imgElement: HTMLElement): Promise<string> {
+        const regExp = new RegExp(/<img[^>]+src="([^">]+)/);
+        const imgTag = imgElement.toString().match(regExp);
+        if(!imgTag || imgTag.length == 0) {
+            return "";
+        }
+        const imageUrl = imgTag[0].toString().substring(10);
+        // Don't execute this:
+        // const request = await fetch(imageUrl);
+        // const body = await request.text();
+        console.log(imageUrl);
+        return imageUrl;
+    }
+
+    private exportToCsv(productList: Product[]) {
+
     }
 }
 
