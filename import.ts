@@ -78,7 +78,7 @@ class Import {
 
     private async parseProductNode(productNode: HTMLElement): Promise < Product > {
         const name = productNode.querySelector("a .main h4").text;
-        const categories = productNode.querySelectorAll(".info dt").map(n => n.text);
+        const categories = productNode.querySelectorAll(".info dd").map(n => n.text);
         let price: string = "";
         let specialPrice: string = "";
         let searchPrice = productNode.querySelector("a .main .price .old-price");
@@ -161,7 +161,6 @@ class Import {
             newLine[75] = product.imagePath;
             csvResult = csvResult + newLine.join(",") + lineSeparator;
         });
-        // console.log(csvResult);
         fs.writeFileSync("import.csv", csvResult);
         console.log("File saved as \"import.csv\"")
     }
