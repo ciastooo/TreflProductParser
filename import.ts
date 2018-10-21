@@ -53,9 +53,10 @@ class Import {
 
     private async fetchPage(page: number): Promise < HTMLElement > {
         const url = this.TreflProductListUrl.replace("{page}", page.toString());
-        console.log(`Fetching ${url}`);
+        console.log(`Fetching ${page} page: ${url}`);
         const request = await fetch(url);
         const body = await request.text();
+        console.log(`Page ${page} fetched`);
         return parse(body);
     }
 
@@ -119,26 +120,29 @@ class Import {
             newLine[0] = product.name;
             newLine[2] = "Default";
             newLine[3] = "simple";
-            newLine[4] = product.categories.join(", ");
+            newLine[4] = `\"${product.categories.join(", ")}\"`;
             newLine[5] = "base";
             newLine[6] = product.name;
             newLine[7] = product.description;
             newLine[8] = product.description;
             newLine[10] = "1";
             newLine[11] = "Taxable Goods";
-            newLine[12] = "Catalog, Search";
-            newLine[13] = product.price.toString();
-            newLine[14] = product.special_price;
-            newLine[18] = product.name.toLowerCase();
+            newLine[12] = "\"Catalog, Search\"";
+            newLine[13] = `"${product.price}"`;
+            newLine[14] = product.special_price ? `"${product.special_price}"` : "";
+            newLine[17] = product.name.toLowerCase();
+            newLine[18] = product.name;
             newLine[19] = product.name;
             newLine[20] = product.name;
             newLine[21] = product.imagePath;
-            newLine[29] = `${today.getMonth()}/${today.getDay()}/${today.getFullYear()} ${todayHours}`;
-            newLine[30] = `${today.getMonth()}/${today.getDay()}/${today.getFullYear()} ${todayHours}`;
+            newLine[23] = product.imagePath;
+            newLine[25] = product.imagePath;
+            newLine[29] = `"${today.getMonth()}/${today.getDay()}/${today.getFullYear()}, ${todayHours}"`;
+            newLine[30] = `"${today.getMonth()}/${today.getDay()}/${today.getFullYear()}, ${todayHours}"`;
             newLine[33] = "Block after Info Column";
-            newLine[37] = "Ude config";
+            newLine[37] = "Use config";
             newLine[47] = "10";
-            newLine[48] = "0";
+            newLine[48] = "0.0000";
             newLine[49] = "1";
             newLine[50] = "0";
             newLine[51] = "0";
@@ -148,7 +152,7 @@ class Import {
             newLine[55] = "10000";
             newLine[56] = "1";
             newLine[57] = "1";
-            newLine[58] = "1";
+            newLine[58] = "3";
             newLine[59] = "1";
             newLine[60] = "1";
             newLine[61] = "1";
@@ -158,7 +162,7 @@ class Import {
             newLine[65] = "0";
             newLine[66] = "0";
             newLine[67] = "0";
-            newLine[75] = product.imagePath;
+            newLine[74] = product.imagePath;
             csvResult = csvResult + newLine.join(",") + lineSeparator;
         });
         fs.writeFileSync("import.csv", csvResult);
