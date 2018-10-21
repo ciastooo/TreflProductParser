@@ -128,8 +128,8 @@ class Import {
             newLine[10] = "1";
             newLine[11] = "Taxable Goods";
             newLine[12] = "\"Catalog, Search\"";
-            newLine[13] = `"${product.price}"`;
-            newLine[14] = product.special_price ? `"${product.special_price}"` : "";
+            newLine[13] = product.price.replace(",", ".");
+            newLine[14] = product.special_price ? product.special_price.replace(",", ".") : "";
             newLine[17] = product.name.toLowerCase();
             newLine[18] = product.name;
             newLine[19] = product.name;
@@ -137,8 +137,8 @@ class Import {
             newLine[21] = product.imagePath;
             newLine[23] = product.imagePath;
             newLine[25] = product.imagePath;
-            newLine[29] = `"${today.getMonth()}/${today.getDay()}/${today.getFullYear()}, ${todayHours}"`;
-            newLine[30] = `"${today.getMonth()}/${today.getDay()}/${today.getFullYear()}, ${todayHours}"`;
+            newLine[29] = `"${today.getMonth()}/${today.getDate()}/${today.getFullYear()}, ${todayHours}"`;
+            newLine[30] = `"${today.getMonth()}/${today.getDate()}/${today.getFullYear()}, ${todayHours}"`;
             newLine[33] = "Block after Info Column";
             newLine[37] = "Use config";
             newLine[47] = "10";
