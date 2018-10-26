@@ -45,7 +45,8 @@ class Import {
 
         parsedProductList = parsedProductList.concat(...await Promise.all(productListPromiseArray));
         console.log(`Parsed ${parsedProductList.length} products...`)
-
+        parsedProductList = parsedProductList.filter((p, i, self) => i === self.findIndex(pp => pp.name == p.name));
+        console.log(`Filtered ${parsedProductList.length}`)
         this.exportToCsv(parsedProductList, this.CsvHeaderList);
 
         return 0;
@@ -110,38 +111,41 @@ class Import {
     }
 
     private exportToCsv(productList: Product[], headers: string[], separator: string = ',', lineSeparator: string = "\n") {
-        let csvResult = headers.join(",") + lineSeparator;
+        let csvHeader = headers.join(",") + lineSeparator;
         const today = new Date();
         const todayHours = today.getHours() >= 12 ? `${today.getHours()-12}:${today.getMinutes()} PM` : `${today.getHours()}:${today.getMinutes()} PM`;
 
+        productList = productList.filter(x => x.categories.length == 1)
+
         console.log("Saving csv file...");
-        productList.forEach(product => {
+        let csvLines: string[] = [];
+        productList.forEach((product, i) => {
             let newLine = new Array < string > (headers.length);
-            newLine[0] = product.name;
+            newLine[0] = `${i}`;
             newLine[2] = "Default";
             newLine[3] = "simple";
-            newLine[4] = `\"${product.categories.join(", ")}\"`;
+            newLine[4] = `\"Default Category,Default Category/${product.categories.join(",")}\"`;
             newLine[5] = "base";
-            newLine[6] = product.name;
-            newLine[7] = product.description;
-            newLine[8] = product.description;
+            newLine[6] = `"${product.name}"`;
+            newLine[7] = `"${product.description}"`;
+            newLine[8] = `"${product.description}"`;
             newLine[10] = "1";
             newLine[11] = "Taxable Goods";
             newLine[12] = "\"Catalog, Search\"";
             newLine[13] = product.price.replace(",", ".");
             newLine[14] = product.special_price ? product.special_price.replace(",", ".") : "";
-            newLine[17] = product.name.toLowerCase();
-            newLine[18] = product.name;
-            newLine[19] = product.name;
-            newLine[20] = product.name;
-            newLine[21] = product.imagePath;
-            newLine[23] = product.imagePath;
-            newLine[25] = product.imagePath;
+            // newLine[17] = `"${product.name}"`.toLowerCase();
+            // newLine[18] = `"${product.name}"`;
+            // newLine[19] = `"${product.name}"`;
+            // newLine[20] = `"${product.name}"`;
+            newLine[21] = `"${product.imagePath}"`;
+            newLine[23] = `"${product.imagePath}"`;
+            newLine[25] = `"${product.imagePath}"`;
             newLine[29] = `"${today.getMonth()}/${today.getDate()}/${today.getFullYear()}, ${todayHours}"`;
             newLine[30] = `"${today.getMonth()}/${today.getDate()}/${today.getFullYear()}, ${todayHours}"`;
             newLine[33] = "Block after Info Column";
             newLine[37] = "Use config";
-            newLine[47] = "10";
+            newLine[47] = "100";
             newLine[48] = "0.0000";
             newLine[49] = "1";
             newLine[50] = "0";
@@ -162,11 +166,23 @@ class Import {
             newLine[65] = "0";
             newLine[66] = "0";
             newLine[67] = "0";
-            newLine[74] = product.imagePath;
-            csvResult = csvResult + newLine.join(",") + lineSeparator;
+            newLine[74] = "";
+            csvLines.push(newLine.join(",") + lineSeparator);
+            // csvResult = csvResult + newLine.join(",") + lineSeparator;
         });
-        fs.writeFileSync("import.csv", csvResult);
-        console.log("File saved as \"import.csv\"")
+        let csv: string = csvHeader;
+        let j = 1;
+        for (let i = 0; i < csvLines.length; i++) {
+            csv = csv + csvLines[i];
+            if ((i % 50 == 0 && i != 0) || i == csvLines.length - 1) {
+                fs.writeFileSync(`${j}import.csv`, csv);
+                console.log(`File saved as "${j}import.csv"`)
+                j = j + 1;
+                csv = csvHeader;
+            }
+        }
+        // fs.writeFileSync(`${j}import.csv`, csv);
+
     }
 }
 
